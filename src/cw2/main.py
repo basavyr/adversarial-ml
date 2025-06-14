@@ -355,3 +355,21 @@ if __name__ == '__main__':
                     print(f'Idx: {i}: Attack was successful for {labels[i]}')
         print(adversarial_labels)
         # plot_images(images, orig_preds, adv_images, adv_preds, 15)
+
+"""
+python3 main.py
+Using device: mps
+
+--- Loading pre-trained model for cifar10 ---
+Pre-trained model loaded successfully.
+
+--- Carlini & Wagner Attack Demonstration ---
+Acc: 75.69 % | Loss: 1.176
+Acc: 13.28 % | Loss: 3.346
+
+Replacing activation functions with ParamTanh (by creating a new model and loading weights)...
+Params: (0.05520621723583746, -0.06867610101078478, 0.060870514150619504, -0.03263180807517824)
+Activation functions successfully replaced with ParamTanh in the new model.
+Acc: 61.07 % | Loss: 2.907
+Acc: 27.34 % | Loss: 5.889
+"""
