@@ -2,6 +2,27 @@ import torch
 import torch.nn as nn
 
 
+class Net(nn.Module):
+    def __init__(self, n_channels: int, img_height: int, img_width: int, num_classes: int):
+        super(Net, self).__init__()
+        self.hidden_units = 256
+        self.num_classes = num_classes
+        self.in_features = n_channels*img_height*img_width
+        self.fc1 = nn.Linear(self.in_features, self.hidden_units)
+        self.fc2 = nn.Linear(self.hidden_units, self.hidden_units)
+        self.fc3 = nn.Linear(self.hidden_units, self.hidden_units)
+        self.fc4 = nn.Linear(self.hidden_units, num_classes)
+        self.tanh = nn.Tanh()
+
+    def forward(self, x: torch.Tensor):
+        x = x.view(x.shape[0], -1)
+        x = self.tanh(self.fc1(x))
+        x = self.tanh(self.fc2(x))
+        x = self.tanh(self.fc3(x))
+        logits = self.fc4(x)
+        return logits
+
+
 # --- 1. CONV5_Net Model Definition ---
 class CONV5_Net(nn.Module):
     def __init__(self, num_classes=10):
