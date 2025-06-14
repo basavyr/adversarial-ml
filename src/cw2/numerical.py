@@ -24,7 +24,7 @@ class ParamTanh(nn.Module):
         c3 = self.C3 + self.delta3
         c4 = self.C4 + self.delta4
 
-        out = (c1 / (c2 + torch.exp(-c3*x))) - c4
+        out = (c1 / (c2 + torch.exp(-c3 * x))) - c4
         return out
 
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     numerical = n_tanh(x)
     pytorch = Tanh()(x)
-    param=ParamTanh(0.1,0.1,0.1,0.1)(x)
+    param = ParamTanh(0.1, 0.1, 0.1, 0.1)(x)
     print(f'Taylor: {numerical}')
     print(f'nn: {pytorch}')
     print(f'param: {param}')
