@@ -9,6 +9,9 @@
         "imshow",
         "mnist",
         "preds",
-        "untargeted"
+        "pycache",
+        "rloss",
+        "untargeted",
+        "vloss"
     ]
 }

@@ -3,5 +3,8 @@ src/fgsm-attack/.python-version
 
 src/mnist/.python-version
 src/cw2/.python-version
+src/cw2/__pycache__
+src/cw2/data
+
 
 src/mnist/mnist_cnn.pt
