@@ -234,6 +234,7 @@ def replace_model_act_function(resnet_model):
     delta2 = random.uniform(-interval, interval)
     delta3 = random.uniform(-interval, interval)
     delta4 = random.uniform(-interval, interval)
+    print(f'Params: {delta1, delta2, delta3, delta4}')
     new_param_tanh_instance = ParamTanh(delta1, delta2, delta3, delta4)
 
     replaced_model = ResNet18(act_fn=new_param_tanh_instance)
@@ -308,8 +309,8 @@ if __name__ == '__main__':
         device=DEVICE,
         targeted=False,
         c=0.01,         # strong tradeoff
-        kappa=5,       # confident misclassification
-        steps=1000,     # sufficient optimization
+        kappa=1,       # confident misclassification
+        steps=100,     # sufficient optimization
         lr=0.01         # stable optimizer
     )
     adv_images = cw_attack.generate(images, labels)
