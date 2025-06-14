@@ -13,6 +13,34 @@ from utils import get_datasets, plot_images
 from models import CONV5_Net, Net
 
 
+class FGSMAttack:
+    def __init__(self, model, device, epsilon=0.3):
+        self.model = model.eval()
+        self.device = device
+        self.epsilon = epsilon  # perturbation size
+
+    def generate(self, images, labels):
+        images = images.clone().detach().to(self.device)
+        labels = labels.to(self.device)
+        images.requires_grad = True
+
+        outputs = self.model(images)
+        loss = nn.CrossEntropyLoss()(outputs, labels)
+        self.model.zero_grad()
+        loss.backward()
+
+        # Collect gradient sign
+        grad_sign = images.grad.data.sign()
+
+        # Create perturbed image by adjusting each pixel of the input image
+        adv_images = images + self.epsilon * grad_sign
+
+        # Clamp to maintain [min, max] range (usually 0-1 for normalized images)
+        adv_images = torch.clamp(adv_images, 0, 1)
+
+        return adv_images.detach()
+
+
 class CarliniWagnerL2:
     def __init__(self, model: nn.Module, device: str, targeted=False, c=1e-4, kappa=0, steps=1000, lr=0.01):
         self.model = model.eval()
