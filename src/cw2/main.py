@@ -229,10 +229,11 @@ def replace_model_act_function(resnet_model):
     # Create a new ResNet model with ParamTanh
     # Generate random deltas for this specific replacement
     import random
-    delta1 = random.uniform(-0.5, 0.5)
-    delta2 = random.uniform(-0.5, 0.5)
-    delta3 = random.uniform(-0.5, 0.5)
-    delta4 = random.uniform(-0.5, 0.5)
+    interval = 0.09
+    delta1 = random.uniform(-interval, interval)
+    delta2 = random.uniform(-interval, interval)
+    delta3 = random.uniform(-interval, interval)
+    delta4 = random.uniform(-interval, interval)
     new_param_tanh_instance = ParamTanh(delta1, delta2, delta3, delta4)
 
     replaced_model = ResNet18(act_fn=new_param_tanh_instance)
@@ -301,29 +302,33 @@ if __name__ == '__main__':
     images, labels = next(iter(test_loader))
     images, labels = images.to(DEVICE), labels.to(DEVICE)
 
-    # Initialize and run CW L2 attack
-    # cw_attack = CarliniWagnerL2(
-    #     model=model,
-    #     device=DEVICE,
-    #     targeted=False,
-    #     c=0.01,         # strong tradeoff
-    #     kappa=5,       # confident misclassification
-    #     steps=1000,     # sufficient optimization
-    #     lr=0.01         # stable optimizer
-    # )
+    # Run CW L2 attack
+    cw_attack = CarliniWagnerL2(
+        model=model,
+        device=DEVICE,
+        targeted=False,
+        c=0.01,         # strong tradeoff
+        kappa=5,       # confident misclassification
+        steps=1000,     # sufficient optimization
+        lr=0.01         # stable optimizer
+    )
+    adv_images = cw_attack.generate(images, labels)
 
-    fgsm_attack = FGSMAttack(model=model,
-                             device=DEVICE,
-                             epsilon=0.25)
+    # run FGSM attack
+    # fgsm_attack = FGSMAttack(model=model,
+    #                          device=DEVICE,
+    #                          epsilon=0.01)
+    # adv_images = fgsm_attack.generate(images, labels)
 
-    # adv_images = cw_attack.generate(images, labels)
-    adv_images = fgsm_attack.generate(images, labels)
     adv_loader = DataLoader(AdvLoader(adv_images, labels),
                             batch_size=batch_size, shuffle=False)
 
     eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
     eval_model(model, DEVICE, adv_loader, nn.CrossEntropyLoss())
-    test_act_fct_replacement(model, DEVICE)
+    # test_act_fct_replacement(model, DEVICE)
+    # print(model)
+    model = replace_model_act_function(resnet_model=model)
+    # print(model)
     eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
     eval_model(model, DEVICE, adv_loader, nn.CrossEntropyLoss())
 
