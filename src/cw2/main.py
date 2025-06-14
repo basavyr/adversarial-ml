@@ -12,6 +12,8 @@ import sys
 from utils import get_datasets, plot_images
 from models import CONV5_Net, Net
 
+from numerical import NTanh, ParamTanh
+
 
 class FGSMAttack:
     def __init__(self, model, device, epsilon=0.3):
@@ -106,6 +108,26 @@ class CarliniWagnerL2:
         return torch.tanh(w)
 
 
+def test_act_fct_replacement(model: nn.Module, device: torch.device | str):
+    def sample_delta_beta(low=-0.3, high=0.3, alpha=2.0):
+        u = torch.distributions.Beta(alpha, alpha).sample().item()  # in [0,1]
+        return (u - 0.5) * 2 * (high - low) / 2  # scale and center around 0
+
+    model.eval()
+    model.to(device)
+
+    for k, v in model.named_children():
+        if isinstance(v, nn.Tanh):
+            delta_1 = sample_delta_beta()
+            delta_2 = sample_delta_beta()
+            delta_3 = sample_delta_beta()
+            delta_4 = sample_delta_beta()
+            model._modules[k] = ParamTanh(delta1=delta_1,
+                                          delta2=delta_2,
+                                          delta3=delta_3,
+                                          delta4=delta_4)
+
+
 # --- 4. Training Function (to be executed by the user) ---
 def train_model(model, device, train_loader, test_loader, num_epochs=10, learning_rate=0.001):
     loss_fn = nn.CrossEntropyLoss()
@@ -176,6 +198,7 @@ def eval_model(model: nn.Module, device: str, test_loader: DataLoader, loss_fn: 
         x, y_true = x.to(device), y_true.to(device)
 
         y = model(x)
+
         loss = loss_fn(y, y_true)
         vloss += loss.item()*x.shape[0]
 
@@ -188,6 +211,8 @@ def eval_model(model: nn.Module, device: str, test_loader: DataLoader, loss_fn: 
 
 # --- Example Usage (to be executed by the user) ---
 if __name__ == '__main__':
+    # torch.manual_seed(1137)
+
     DEVICE = "mps"
     print(f"Using device: {DEVICE}")
 
@@ -196,7 +221,7 @@ if __name__ == '__main__':
     train_dataset, test_dataset, input_channels, num_classes = get_datasets(
         DATASET)
 
-    batch_size = 32
+    batch_size = 64
     epochs = 20
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True)
@@ -235,17 +260,23 @@ if __name__ == '__main__':
     images, labels = images.to(DEVICE), labels.to(DEVICE)
 
     # Initialize and run CW L2 attack
-    cw_attack = CarliniWagnerL2(model,
-                                device=DEVICE,
-                                targeted=False,
-                                c=1,
-                                kappa=10,
-                                steps=10,
-                                lr=0.01)
+    cw_attack = CarliniWagnerL2(
+        model=model,
+        device=DEVICE,
+        targeted=False,
+        c=1,         # strong tradeoff
+        kappa=20,       # confident misclassification
+        steps=2500,     # sufficient optimization
+        lr=0.01         # stable optimizer
+    )
+
     adv_images = cw_attack.generate(images, labels)
     adv_loader = DataLoader(AdvLoader(adv_images, labels),
                             batch_size=batch_size, shuffle=False)
 
+    eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
+    eval_model(model, DEVICE, adv_loader, nn.CrossEntropyLoss())
+    test_act_fct_replacement(model, DEVICE)
     eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
     eval_model(model, DEVICE, adv_loader, nn.CrossEntropyLoss())
 
@@ -254,16 +285,18 @@ if __name__ == '__main__':
         orig_preds = model(images).argmax(dim=1)
         adv_preds = model(adv_images).argmax(dim=1)
 
-    adversarial_labels = 0
-    # Compare results
-    for i in range(len(labels)):
-        print(
-            f"[{i}] True: {labels[i].item()} | Orig: {orig_preds[i].item()} | Adv: {adv_preds[i].item()}")
+    compare_results = True
 
-        if (orig_preds[i].item() == labels[i].item()) and (labels[i].item() != adv_preds[i].item()):
-            adversarial_labels += 1
+    if compare_results:
+        adversarial_labels = 0
+        for i in range(len(labels)):
             if os.getenv("DEBUG"):
-                print(f'Idx: {i}: Attack was successful for {labels[i]}')
+                print(
+                    f"[{i}] True: {labels[i].item()} | Orig: {orig_preds[i].item()} | Adv: {adv_preds[i].item()}")
 
-    print(adversarial_labels)
-    plot_images(images, orig_preds, adv_images, adv_preds, 15)
+            if (orig_preds[i].item() == labels[i].item()) and (labels[i].item() != adv_preds[i].item()):
+                adversarial_labels += 1
+                if os.getenv("DEBUG"):
+                    print(f'Idx: {i}: Attack was successful for {labels[i]}')
+        print(adversarial_labels)
+        # plot_images(images, orig_preds, adv_images, adv_preds, 15)
