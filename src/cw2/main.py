@@ -217,6 +217,40 @@ def test_act_fct_replacement(model: nn.Module, device: torch.device | str):
     #                                       delta4=delta_4)
 
 
+# 2. Function to replace the model's activation function
+def replace_model_act_function(resnet_model):
+    # This function now doesn't "replace" in-place on an existing F.tanh model,
+    # but rather initializes a new model with ParamTanh and attempts to copy
+    # the weights. This is because F.tanh is not a nn.Module that can be replaced.
+    # We need to construct a new model with the desired activation.
+
+    print("\nReplacing activation functions with ParamTanh (by creating a new model and loading weights)...")
+
+    # Create a new ResNet model with ParamTanh
+    # Generate random deltas for this specific replacement
+    import random
+    delta1 = random.uniform(-0.5, 0.5)
+    delta2 = random.uniform(-0.5, 0.5)
+    delta3 = random.uniform(-0.5, 0.5)
+    delta4 = random.uniform(-0.5, 0.5)
+    new_param_tanh_instance = ParamTanh(delta1, delta2, delta3, delta4)
+
+    replaced_model = ResNet18(act_fn=new_param_tanh_instance)
+
+    # Copy the state dictionary from the original model to the new model.
+    # This assumes the architecture (excluding the activation function implementation)
+    # remains the same.
+    replaced_model.load_state_dict(resnet_model.state_dict(), strict=False)
+    # strict=False is used because the new model will have a `ParamTanh` instance
+    # which has parameters (delta1, delta2, delta3, delta4, C1, C2, C3, C4)
+    # that were not in the original model's state_dict if F.tanh was used.
+    # If the original model was already built with `ParamTanh` (e.g. from ResNet18_ParamTanh()),
+    # then strict=True might work, depending on how deltas are handled.
+
+    print("Activation functions successfully replaced with ParamTanh in the new model.")
+    return replaced_model
+
+
 # --- Example Usage (to be executed by the user) ---
 if __name__ == '__main__':
     # torch.manual_seed(1137)
