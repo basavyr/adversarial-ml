@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader, Dataset
 import os
 import sys
 
-from utils import get_datasets
-from models import CONV5_Net
+from utils import get_datasets, plot_images
+from models import CONV5_Net, Net
 
 
 class CarliniWagnerL2:
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     train_dataset, test_dataset, input_channels, num_classes = get_datasets(
         DATASET)
 
-    batch_size = 256
+    batch_size = 32
     epochs = 20
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True)
@@ -176,28 +176,27 @@ if __name__ == '__main__':
         test_dataset, batch_size=batch_size, shuffle=False)
 
     # Initialize model
-    model = CONV5_Net(num_classes=num_classes)
+    # model = CONV5_Net(num_classes=num_classes)
+    model = Net(3, 28, 28, 10)
     model.to(DEVICE)
+    model_pth = f'{DATASET}-{model._get_name()}-{epochs}.pth'
 
     # --- Loading a pre-trained model (for demonstration if you skip training) ---
     print(f"\n--- Loading pre-trained model for {DATASET} ---")
     try:
-        model.load_state_dict(torch.load(
-            f'{DATASET}_conv5_net.pth', map_location=DEVICE))
+        model.load_state_dict(torch.load(model_pth, map_location=DEVICE))
         print("Pre-trained model loaded successfully.")
     except FileNotFoundError:
         print(
-            f"Pre-trained model '{DATASET}_conv5_net.pth' not found. Please train the model first.")
+            f"Pre-trained model not found. Applying training...")
         train_model(model,
                     DEVICE,
                     train_loader,
                     test_loader,
                     num_epochs=epochs,
                     learning_rate=0.001)
-        torch.save(model.state_dict(), f'{DATASET}_conv5_net.pth')
+        torch.save(model.state_dict(), model_pth)
         print("Model trained and saved.")
-
-    sys.exit(1)
 
     print("\n--- Carlini & Wagner Attack Demonstration ---")
     # --- Adversarial Attack Demonstration ---
@@ -237,3 +236,6 @@ if __name__ == '__main__':
             adversarial_labels += 1
             if os.getenv("DEBUG"):
                 print(f'Idx: {i}: Attack was successful for {labels[i]}')
+
+    print(adversarial_labels)
+    plot_images(images, orig_preds, adv_images, adv_preds, 15)
