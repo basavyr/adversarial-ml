@@ -1,4 +1,4 @@
-Results for Netg() model
+Results for Net() model
 
 # FGSM
 # Params: (0.0, 0.3148523271083832, 0.0, 0.08458442986011505)
@@ -10,10 +10,10 @@ Results for Netg() model
 # Params: (1.0, 0.8187894225120544, -0.1027098223567009, 0.20317606627941132) -> best accuracy increase, std=0.8
 
 
-Results for ConvNet
+Results for ConvNet() model
 
 --- Carlini & Wagner Attack Demonstration ---
 Acc: 99.23 % | Loss: 0.026
 Acc: 68.75 % | Loss: 1.995
 Acc: 96.32 % | Loss: 0.143
-Acc: 76.56 % | Loss: 1.500
+Acc: 76.56 % | Loss: 1.500  
