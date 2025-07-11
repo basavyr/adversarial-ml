@@ -11,7 +11,7 @@ import sys
 
 from utils import get_datasets, plot_images
 from models import CONV5_Net, Net, ResNet18
-
+import time
 from numerical import NTanh, ParamTanh
 
 
@@ -189,7 +189,7 @@ def eval_model(model: nn.Module, device: str, test_loader: DataLoader, loss_fn: 
     print(f'Acc: {acc:.2f} % | Loss: {vloss:.3f}')
 
 
-def test_act_fct_replacement(model: nn.Module, device: torch.device | str):
+def test_act_fct_replacement(model_type: str, model: nn.Module, device: torch.device | str):
     INTERVAL = 0.1
 
     def sample_deltas(std=0.1, low=-INTERVAL, high=INTERVAL, n=4):
@@ -199,22 +199,24 @@ def test_act_fct_replacement(model: nn.Module, device: torch.device | str):
     model.eval()
     model.to(device)
 
-    for idx, layer in enumerate(model.features):
-        if isinstance(layer, nn.Tanh):
-            delta_1, delta_2, delta_3, delta_4 = sample_deltas()
-            print(f'Params: {delta_1, delta_2, delta_3, delta_4}')
-            model.features[idx] = ParamTanh(delta1=delta_1,
-                                            delta2=delta_2,
-                                            delta3=delta_3,
-                                            delta4=delta_4)
-    # for k, v in model.named_children():
-    #     if isinstance(v, nn.Tanh):
-    #         delta_1, delta_2, delta_3, delta_4 = sample_deltas()
-    #         print(f'Params: {delta_1, delta_2, delta_3, delta_4}')
-    #         model._modules[k] = ParamTanh(delta1=delta_1,
-    #                                       delta2=delta_2,
-    #                                       delta3=delta_3,
-    #                                       delta4=delta_4)
+    if model_type == "linear":
+        for k, v in model.named_children():
+            if isinstance(v, nn.Tanh):
+                delta_1, delta_2, delta_3, delta_4 = sample_deltas()
+                print(f'Params: {delta_1, delta_2, delta_3, delta_4}')
+                model._modules[k] = ParamTanh(delta1=delta_1,
+                                              delta2=delta_2,
+                                              delta3=delta_3,
+                                              delta4=delta_4)
+    elif model_type == "conv":
+        for idx, layer in enumerate(model.features):
+            if isinstance(layer, nn.Tanh):
+                delta_1, delta_2, delta_3, delta_4 = sample_deltas()
+                print(f'Params: {delta_1, delta_2, delta_3, delta_4}')
+                model.features[idx] = ParamTanh(delta1=delta_1,
+                                                delta2=delta_2,
+                                                delta3=delta_3,
+                                                delta4=delta_4)
 
 
 # 2. Function to replace the model's activation function
@@ -273,8 +275,11 @@ if __name__ == '__main__':
         test_dataset, batch_size=batch_size, shuffle=False)
 
     # Initialize model
+    model_type = "resnet"
+    # model = CONV5_Net()
     model = ResNet18()
     # model = Net(3, 28, 28, 10)
+    # model = Net(3, 32, 32, 10)
     model.to(DEVICE)
     model_pth = f'{DATASET}-{model._get_name()}-{epochs}.pth'
 
@@ -295,9 +300,25 @@ if __name__ == '__main__':
         torch.save(model.state_dict(), model_pth)
         print("Model trained and saved.")
 
-    print("\n--- Carlini & Wagner Attack Demonstration ---")
-    # --- Adversarial Attack Demonstration ---
+    # print("\n--- Carlini & Wagner Attack Demonstration ---")
+    print("\n--- Adversarial Attack Demonstration ---")
     model.eval()
+
+    # eval1_start = time.time()
+    # eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
+    # eval1_duration = time.time()-eval1_start
+
+    # if model_type == "resnet":
+    #     model = replace_model_act_function(resnet_model=model)
+    # else:
+    #     test_act_fct_replacement(model_type, model, DEVICE)
+
+    # eval2_start = time.time()
+    # eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
+    # eval2_duration = time.time()-eval2_start
+    # print(eval1_duration)
+    # print(eval2_duration)
+    # sys.exit(1)
 
     # Get one batch from test_loader
     images, labels = next(iter(test_loader))
@@ -308,7 +329,7 @@ if __name__ == '__main__':
         model=model,
         device=DEVICE,
         targeted=False,
-        c=0.01,         # strong tradeoff
+        c=0.008,         # strong tradeoff
         kappa=1,       # confident misclassification
         steps=100,     # sufficient optimization
         lr=0.01         # stable optimizer
@@ -318,7 +339,7 @@ if __name__ == '__main__':
     # run FGSM attack
     # fgsm_attack = FGSMAttack(model=model,
     #                          device=DEVICE,
-    #                          epsilon=0.01)
+    #                          epsilon=0.6)
     # adv_images = fgsm_attack.generate(images, labels)
 
     adv_loader = DataLoader(AdvLoader(adv_images, labels),
@@ -326,10 +347,12 @@ if __name__ == '__main__':
 
     eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
     eval_model(model, DEVICE, adv_loader, nn.CrossEntropyLoss())
-    # test_act_fct_replacement(model, DEVICE)
-    # print(model)
-    model = replace_model_act_function(resnet_model=model)
-    # print(model)
+
+    if model_type == "resnet":
+        model = replace_model_act_function(resnet_model=model)
+    else:
+        test_act_fct_replacement(model_type, model, DEVICE)
+
     eval_model(model, DEVICE, test_loader, nn.CrossEntropyLoss())
     eval_model(model, DEVICE, adv_loader, nn.CrossEntropyLoss())
 
@@ -364,12 +387,12 @@ Using device: mps
 Pre-trained model loaded successfully.
 
 --- Carlini & Wagner Attack Demonstration ---
-Acc: 75.69 % | Loss: 1.176
-Acc: 13.28 % | Loss: 3.346
+Acc: 75.69 % | Loss: 1.176 (before attack, on all validation set 10000 samples)
+Acc: 13.28 % | Loss: 3.346 (after attack, but evaluation is done only for the first batch (i.e, 128 samples))
 
 Replacing activation functions with ParamTanh (by creating a new model and loading weights)...
 Params: (0.05520621723583746, -0.06867610101078478, 0.060870514150619504, -0.03263180807517824)
 Activation functions successfully replaced with ParamTanh in the new model.
-Acc: 61.07 % | Loss: 2.907
-Acc: 27.34 % | Loss: 5.889
+Acc: 61.07 % | Loss: 2.907 (on all validation set)
+Acc: 27.34 % | Loss: 5.889 (only for the first batch (i.e, 128 samples))
 """
