@@ -17,3 +17,39 @@ Acc: 99.23 % | Loss: 0.026
 Acc: 68.75 % | Loss: 1.995
 Acc: 96.32 % | Loss: 0.143
 Acc: 76.56 % | Loss: 1.500
+
+
+
+
+results for resnet18 with CW2
+
+Using device: mps
+
+--- Loading pre-trained model for cifar10 ---
+Pre-trained model loaded successfully.
+
+--- Carlini & Wagner Attack Demonstration ---
+Acc: 75.69 % | Loss: 1.176
+Acc: 13.28 % | Loss: 3.346
+
+Replacing activation functions with ParamTanh (by creating a new model and loading weights)...
+Params: (0.0200307710610107, 0.033337878114005834, -0.01278685939941128, -0.039333349329233824)
+Activation functions successfully replaced with ParamTanh in the new model.
+Acc: 73.56 % | Loss: 1.304
+Acc: 25.00 % | Loss: 3.148
+
+
+Using device: mps
+
+--- Loading pre-trained model for cifar10 ---
+Pre-trained model loaded successfully.
+
+--- Carlini & Wagner Attack Demonstration ---
+Acc: 75.69 % | Loss: 1.176
+Acc: 13.28 % | Loss: 3.346
+
+Replacing activation functions with ParamTanh (by creating a new model and loading weights)...
+Params: (-0.04505281793346542, 0.06746834404088692, -0.01543470226664237, -0.010540678135917025)
+Activation functions successfully replaced with ParamTanh in the new model.
+Acc: 74.36 % | Loss: 1.165
+Acc: 29.69 % | Loss: 2.665
