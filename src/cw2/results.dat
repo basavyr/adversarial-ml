@@ -53,3 +53,21 @@ Params: (-0.04505281793346542, 0.06746834404088692, -0.01543470226664237, -0.010
 Activation functions successfully replaced with ParamTanh in the new model.
 Acc: 74.36 % | Loss: 1.165
 Acc: 29.69 % | Loss: 2.665
+
+
+# results for resnet
+
+Using device: mps
+
+--- Loading pre-trained model for cifar10 ---
+Pre-trained model loaded successfully.
+
+--- Adversarial Attack Demonstration ---
+Acc: 75.69 % | Loss: 1.176
+Acc: 21.88 % | Loss: 3.135
+
+Replacing activation functions with ParamTanh (by creating a new model and loading weights)...
+Params: (-0.017047628587157138, 0.06406532293798642, -0.024223071085043166, -0.03024551983831797)
+Activation functions successfully replaced with ParamTanh in the new model.
+Acc: 76.04 % | Loss: 1.050
+Acc: 29.69 % | Loss: 2.435

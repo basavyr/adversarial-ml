@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
+import random
 
 import os
 import sys
@@ -230,7 +231,6 @@ def replace_model_act_function(resnet_model):
 
     # Create a new ResNet model with ParamTanh
     # Generate random deltas for this specific replacement
-    import random
     interval = 0.09
     delta1 = random.uniform(-interval, interval)
     delta2 = random.uniform(-interval, interval)
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     print(f"Using device: {DEVICE}")
 
     # Choose dataset
-    DATASET = 'cifar10'  # or 'cifar10'
+    DATASET = 'cifar10'  # "mnist" or "cifar10"
     train_dataset, test_dataset, input_channels, num_classes = get_datasets(
         DATASET)
 
