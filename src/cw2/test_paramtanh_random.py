@@ -266,7 +266,7 @@ def test_resnet(batch_size: int = 256, num_iterations: int = 100):
 
 if __name__ == "__main__":
     batch_size: int = 256
-    num_iterations: int = 100
+    num_iterations: int = 200
     test_l4(batch_size, num_iterations)
     print("\n")
     test_convnet(batch_size, num_iterations)
