@@ -5,6 +5,7 @@
         "cmap",
         "coeff",
         "coeffs",
+        "convnet",
         "denorm",
         "fgsm",
         "figsize",
