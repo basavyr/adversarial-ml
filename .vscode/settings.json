@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "avgpool",
+        "Backpropagation",
         "Carlini",
         "cmap",
         "coeff",
@@ -14,8 +15,11 @@
         "mnist",
         "preds",
         "pycache",
+        "randn",
         "rloss",
         "untargeted",
         "vloss"
-    ]
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
 }
